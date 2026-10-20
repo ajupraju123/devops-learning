@@ -1,0 +1,31 @@
+# Pods that tolerate the taint:  kubectl taint nodes <node> test=true:NoSchedule
+# A toleration only PERMITS scheduling on tainted nodes. It does not attract pods to them.
+# To force placement on specific nodes, combine with nodeSelector or affinity.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tolerant
+  labels:
+    app: tolerant
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tolerant
+  template:
+    metadata:
+      labels:
+        app: tolerant
+    spec:
+      tolerations:
+        - key: "test"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi

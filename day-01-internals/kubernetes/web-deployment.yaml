@@ -1,0 +1,35 @@
+# 3-replica nginx Deployment
+# selector.matchLabels MUST match template.metadata.labels, or the API server rejects it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web              # which pods this Deployment (and its ReplicaSet) owns
+  template:
+    metadata:
+      labels:
+        app: web            # labels the pods actually get; the Service selects on these
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          resources:
+            requests:       # the scheduler uses requests when filtering nodes
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi # exceeding this gets the container OOMKilled (exit code 137)
+          readinessProbe:   # pod joins the EndpointSlice only after this passes
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5

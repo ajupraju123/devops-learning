@@ -1,0 +1,13 @@
+# ClusterIP Service in front of the web pods.
+# The EndpointSlice controller lists the IPs of Ready pods whose labels match the selector.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  type: ClusterIP
+  selector:
+    app: web                # must match the pod labels exactly
+  ports:
+    - port: 80              # port the Service listens on
+      targetPort: 80        # container port the traffic is sent to

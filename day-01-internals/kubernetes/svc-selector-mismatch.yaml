@@ -1,0 +1,24 @@
+# Deliberately broken: no pod has the label app=api, so this Service has NO endpoints.
+#
+# Diagnose:
+#   kubectl describe svc api-broken        # Endpoints: <none>
+#   kubectl get svc api-broken -o wide     # SELECTOR column shows app=api
+#   kubectl get pods --show-labels         # compare with the pod labels
+#   kubectl get pods -l app=api            # returns nothing -> nothing behind the Service
+#
+# Fix (either side):
+#   kubectl run apipod --image=nginx --labels=app=api     # give a pod the label the Service wants
+#   or edit the selector to match existing pods (app: web)
+#
+# Also remember: a pod that is not Ready (failing readiness probe) is left out of endpoints too.
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-broken
+spec:
+  type: ClusterIP
+  selector:
+    app: api
+  ports:
+    - port: 80
+      targetPort: 80
