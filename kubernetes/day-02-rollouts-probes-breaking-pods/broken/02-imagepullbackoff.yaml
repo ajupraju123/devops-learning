@@ -1,0 +1,20 @@
+# BROKEN ON PURPOSE: ErrImagePull, then ImagePullBackOff.
+# The pod IS scheduled to a node, but the kubelet (via containerd) can't pull this tag.
+#
+# Predict first: is this a scheduler problem or a kubelet problem?
+# Diagnose:
+#   kubectl get pod imagepull-demo        # ErrImagePull, then ImagePullBackOff
+#   kubectl describe pod imagepull-demo   # Events: Scheduled OK, then Failed to pull image ... not found
+# Fix: use a real tag (e.g. nginx:1.27).
+# In real life, also check: image name typo, missing imagePullSecret, registry permissions
+# (on EKS, the node role needs ECR read access; cross-account ECR needs a repository policy).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: imagepull-demo
+  labels:
+    app: imagepull-demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx:doesnotexist

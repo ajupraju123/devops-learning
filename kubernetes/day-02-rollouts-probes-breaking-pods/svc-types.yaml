@@ -1,0 +1,42 @@
+# Three Service types in front of the rollout-demo pods (apply rolling-update-deployment.yaml first).
+# All three select pods by the same label: app=rollout-demo.
+
+# 1) ClusterIP (default): stable internal virtual IP + DNS name "rollout-demo"
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollout-demo
+spec:
+  type: ClusterIP
+  selector:
+    app: rollout-demo
+  ports:
+    - port: 80          # Service port
+      targetPort: 80    # container port
+---
+# 2) NodePort: ClusterIP plus a port opened on EVERY node (default range 30000-32767)
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollout-demo-np
+spec:
+  type: NodePort
+  selector:
+    app: rollout-demo
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080
+---
+# 3) Headless: no virtual IP; DNS returns the individual pod IPs
+apiVersion: v1
+kind: Service
+metadata:
+  name: rollout-demo-headless
+spec:
+  clusterIP: None
+  selector:
+    app: rollout-demo
+  ports:
+    - port: 80
+      targetPort: 80

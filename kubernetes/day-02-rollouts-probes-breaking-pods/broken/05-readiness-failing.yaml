@@ -1,0 +1,40 @@
+# BROKEN ON PURPOSE: pod is Running but never Ready (0/1), so the Service has no endpoints.
+# The readiness probe checks /nope, which nginx answers with 404, so the probe fails forever.
+# A failing readiness probe removes the pod from endpoints. It does NOT restart the container.
+#
+# Predict first: will RESTARTS climb? Will the selector match the pod's labels?
+# Diagnose:
+#   kubectl get pod ready-demo                      # Running, READY 0/1, RESTARTS 0
+#   kubectl describe pod ready-demo                 # Events: Readiness probe failed: HTTP probe failed with statuscode: 404
+#   kubectl describe svc ready-demo                 # Endpoints empty even though labels match
+#   kubectl get endpointslices
+# Fix: change the probe path to / (or whatever the app really serves), then recreate the pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ready-demo
+  labels:
+    app: ready-demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
+      ports:
+        - containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /nope
+          port: 80
+        periodSeconds: 5
+        failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ready-demo
+spec:
+  selector:
+    app: ready-demo
+  ports:
+    - port: 80
+      targetPort: 80

@@ -1,0 +1,28 @@
+# BROKEN ON PURPOSE: the container is healthy, but the liveness probe checks a path that returns 404,
+# so the kubelet keeps killing and restarting it. RESTARTS climbs, and eventually it shows CrashLoopBackOff.
+#
+# Predict first: how is this different from the readiness case (05)? Which command shows the restarts' cause?
+# Diagnose:
+#   kubectl get pod liveness-demo -w                # RESTARTS keeps increasing
+#   kubectl describe pod liveness-demo              # Events: Liveness probe failed ... Container nginx failed liveness probe, will be restarted
+#   kubectl logs liveness-demo --previous           # the app itself looked fine
+# Fix: point the liveness probe at a path that returns 200 (e.g. /), then recreate the pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: liveness-demo
+  labels:
+    app: liveness-demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
+      ports:
+        - containerPort: 80
+      livenessProbe:
+        httpGet:
+          path: /nope
+          port: 80
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 2

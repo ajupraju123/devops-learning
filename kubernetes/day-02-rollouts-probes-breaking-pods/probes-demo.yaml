@@ -1,0 +1,51 @@
+# A healthy Deployment with all three probes configured.
+#
+# startupProbe : while it hasn't succeeded, liveness and readiness are disabled.
+# readinessProbe: failure removes the pod from Service endpoints (no restart).
+# livenessProbe : failure makes the kubelet restart the container.
+#
+# Defaults if a field is omitted: periodSeconds 10, timeoutSeconds 1, failureThreshold 3, successThreshold 1.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probes-demo
+  labels:
+    app: probes-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: probes-demo
+  template:
+    metadata:
+      labels:
+        app: probes-demo
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 2
+            failureThreshold: 15     # up to 30s to start before the container is killed
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3

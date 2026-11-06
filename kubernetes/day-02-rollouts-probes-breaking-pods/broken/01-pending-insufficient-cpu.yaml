@@ -1,0 +1,22 @@
+# BROKEN ON PURPOSE: stuck in Pending.
+# Requests 100 CPU cores, more than any node has, so the scheduler can't place the pod.
+#
+# Predict first: what status will it have, and which component decides?
+# Diagnose:
+#   kubectl get pod pending-demo
+#   kubectl describe pod pending-demo     # Events: FailedScheduling from default-scheduler, "Insufficient cpu"
+# Fix: lower the request (e.g. cpu: 50m), then re-apply (delete and recreate the pod; pod specs are mostly immutable).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-demo
+  labels:
+    app: pending-demo
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.27
+      resources:
+        requests:
+          cpu: "100"
+          memory: 64Mi

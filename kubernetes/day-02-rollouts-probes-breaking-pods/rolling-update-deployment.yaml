@@ -1,0 +1,49 @@
+# 4-replica Deployment with explicit rolling-update settings.
+# Only changes under spec.template trigger a rollout (scaling replicas does not).
+#
+# Try:   kubectl set image deployment/rollout-demo nginx=nginx:1.27
+#        kubectl rollout status deployment/rollout-demo
+#        kubectl rollout undo deployment/rollout-demo
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rollout-demo
+  labels:
+    app: rollout-demo
+  annotations:
+    kubernetes.io/change-cause: "initial version nginx 1.26"
+spec:
+  replicas: 4
+  revisionHistoryLimit: 5        # old ReplicaSets kept for rollback (default 10)
+  progressDeadlineSeconds: 120   # default is 600; shortened so a stuck rollout shows up quickly in the lab
+  minReadySeconds: 5             # a Ready pod must stay Ready this long before counting as available
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                # at most 1 extra pod above 4 during the update
+      maxUnavailable: 0          # never drop below 4 available pods (zero downtime)
+  selector:
+    matchLabels:
+      app: rollout-demo
+  template:
+    metadata:
+      labels:
+        app: rollout-demo
+    spec:
+      containers:
+        - name: nginx            # container name used by `kubectl set image ... nginx=<image>`
+          image: nginx:1.26
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          readinessProbe:        # the gate that decides when a new pod counts as available
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 3
